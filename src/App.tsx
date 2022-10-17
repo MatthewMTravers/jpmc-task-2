@@ -5,9 +5,12 @@ import './App.css';
 
 /**
  * State declaration for <App />
+ * 
+ * This is an interface to define properties for 'data' amd 'showGraph' wherever IState may be called in the file
  */
 interface IState {
   data: ServerRespond[],
+  showGraph: boolean,
 }
 
 /**
@@ -15,13 +18,18 @@ interface IState {
  * It renders title, button and Graph react element.
  */
 class App extends Component<{}, IState> {
+
+  //Since IState is being extended, 'data' and 'showGraph' must be present and represented
   constructor(props: {}) {
     super(props);
 
     this.state = {
-      // data saves the server responds.
-      // We use this state to parse data down to the child element (Graph) as element property
+      
+      //Allows data to be collected and represented
       data: [],
+
+      //Initialized to false to have the graph hidden until user clicks the button, has to be boolean
+      showGraph: false,
     };
   }
 
@@ -29,19 +37,43 @@ class App extends Component<{}, IState> {
    * Render Graph react component with state.data parse as property data
    */
   renderGraph() {
-    return (<Graph data={this.state.data}/>)
+    
+    //If the value of showGraph is false, then don't show the graph
+    if (this.state.showGraph) {
+      return (<Graph data={this.state.data}/>)
+    }
   }
 
   /**
    * Get new data from server and update the state with the new data
    */
   getDataFromServer() {
-    DataStreamer.getData((serverResponds: ServerRespond[]) => {
-      // Update the state by creating a new array of data that consists of
-      // Previous data in the state and the new data from server
-      this.setState({ data: [...this.state.data, ...serverResponds] });
-    });
+      
+    //Initialize variables
+    let x = 0;
+    let timedDelay = 100;
+    let maxDelay = 10000;
+
+    //Wrap the method call in the setInterval function 
+    const delay = setInterval(() => {
+        
+      //Check server
+      DataStreamer.getData((serverResponds: ServerRespond[]) => {
+          
+        //Display values for data and graph 
+        this.setState({ 
+          data: serverResponds,
+          showGraph: true,
+        });
+      });
+
+      //When it has ran for long enough, clear the interval and end the repeating call
+      if (x > maxDelay) {
+        clearInterval(delay);
+      }
+    }, timedDelay);
   }
+
 
   /**
    * Render the App react component
